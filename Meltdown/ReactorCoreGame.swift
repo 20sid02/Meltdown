@@ -156,7 +156,7 @@ final class ReactorViewModel: ObservableObject {
     // MARK: Init
 
     init() {
-        rods = (0..<25).map { id in
+        rods = (0..<37).map { id in
             let p = Double.random(in: 0.10...0.30)
             return ControlRod(id: id, currentPosition: p, targetPosition: p)
         }
@@ -182,7 +182,7 @@ final class ReactorViewModel: ObservableObject {
 
     func reset() {
         stopAlarmHaptics(); stopFlashEffect()
-        rods = (0..<25).map { id in
+        rods = (0..<37).map { id in
             let p = Double.random(in: 0.10...0.30)
             return ControlRod(id: id, currentPosition: p, targetPosition: p)
         }
@@ -195,7 +195,7 @@ final class ReactorViewModel: ObservableObject {
     // Starts with all rods fully inserted and safe — used by StandardTutorialView.
     func resetToSafe() {
         stopAlarmHaptics(); stopFlashEffect()
-        rods = (0..<25).map { id in ControlRod(id: id, currentPosition: 0.0, targetPosition: 0.0) }
+        rods = (0..<37).map { id in ControlRod(id: id, currentPosition: 0.0, targetPosition: 0.0) }
         reactivity = 0.0; isMeltdown = false; elapsedTicks = 0
         coolantTemperature = 30.0; steamVoidRatio = 0.0
         iodineLevel = 0.0; xenonLevel = 0.0
@@ -497,34 +497,41 @@ struct HoneycombGrid: View {
     let onTap: (Int) -> Void
     let onHold: (Int) -> Void
 
-    private let cols = 5, rows = 5
-    private let gap: CGFloat = 3
+    // Axial (q, r) coords: full rings 0+1+2+3 = 1+6+12+18 = 37
+    private static let positions: [(q: Int, r: Int)] = [
+        // Ring 0
+        (0, 0),
+        // Ring 1
+        (1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1),
+        // Ring 2
+        (2, 0), (2, -1), (2, -2), (1, -2), (0, -2), (-1, -1),
+        (-2, 0), (-2, 1), (-2, 2), (-1, 2), (0, 2), (1, 1),
+        // Ring 3
+        (3, 0), (3, -1), (3, -2), (3, -3),
+        (2, -3), (1, -3), (0, -3), (-1, -2), (-2, -1),
+        (-3, 0), (-3, 1), (-3, 2), (-3, 3),
+        (-2, 3), (-1, 3), (0, 3), (1, 2), (2, 1),
+    ]
 
     var body: some View {
         GeometryReader { geo in
-            let hexRFromW = (geo.size.width  - 4.5 * gap) / (5.5 * sqrt(3))
-            let hexRFromH = (geo.size.height - 4.0 * gap) / 8
-            let hexR      = min(hexRFromW, hexRFromH)
-            let hexW      = sqrt(3) * hexR
-            let hexH      = 2 * hexR
-            let colSpacing = hexW + gap
-            let rowSpacing = hexH * 0.75 + gap
-            let xOrigin   = (geo.size.width  - (5.5 * hexW + 4.5 * gap)) / 2
-            let yOrigin   = (geo.size.height - (hexH + CGFloat(rows - 1) * rowSpacing)) / 2
+            // Max extents: |px| ≤ 3√3·hexR, |py| ≤ 4.5·hexR — fit with margin
+            let hexR = min(geo.size.width / 13.2, geo.size.height / 12.0)
+            let hexW = sqrt(3.0) * hexR
+            let hexH = 2.0 * hexR
+            let cx   = geo.size.width  / 2
+            let cy   = geo.size.height / 2
 
-            ZStack(alignment: .topLeading) {
-                ForEach(0..<rows, id: \.self) { row in
-                    ForEach(0..<cols, id: \.self) { col in
-                        let idx = row * cols + col
-                        let xOff: CGFloat = row % 2 == 1 ? colSpacing / 2 : 0
-                        let x = xOrigin + xOff + CGFloat(col) * colSpacing + hexW / 2
-                        let y = yOrigin + CGFloat(row) * rowSpacing + hexH / 2
-                        HexRodCell(rod: rods[idx],
-                                   onTap: { onTap(idx) },
-                                   onHold: { onHold(idx) })
-                            .frame(width: hexW, height: hexH)
-                            .position(x: x, y: y)
-                    }
+            ZStack {
+                ForEach(0..<Self.positions.count, id: \.self) { idx in
+                    let pos = Self.positions[idx]
+                    let x = cx + hexR * sqrt(3.0) * (CGFloat(pos.q) + CGFloat(pos.r) / 2.0)
+                    let y = cy + hexR * 1.5 * CGFloat(pos.r)
+                    HexRodCell(rod: rods[idx],
+                               onTap: { onTap(idx) },
+                               onHold: { onHold(idx) })
+                        .frame(width: hexW, height: hexH)
+                        .position(x: x, y: y)
                 }
             }
         }

@@ -157,7 +157,7 @@ final class LongPlayViewModel: ObservableObject {
 
     init() {
         // Start warm so the player sees power immediately rather than waiting for the boiler.
-        rods = (0..<25).map { id in
+        rods = (0..<37).map { id in
             let p = Double.random(in: 0.40...0.65)
             return ControlRod(id: id, currentPosition: p, targetPosition: p)
         }
@@ -185,7 +185,7 @@ final class LongPlayViewModel: ObservableObject {
 
     func reset() {
         stopSimulation()
-        rods = (0..<25).map { id in
+        rods = (0..<37).map { id in
             let p = Double.random(in: 0.40...0.65)
             return ControlRod(id: id, currentPosition: p, targetPosition: p)
         }
