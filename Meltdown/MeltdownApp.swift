@@ -11,7 +11,7 @@ import SwiftUI
 struct MeltdownApp: App {
     var body: some Scene {
         WindowGroup {
-            ReactorCoreView()
+            RootView()
         }
     }
 }
